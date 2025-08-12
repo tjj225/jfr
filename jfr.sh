@@ -17,11 +17,6 @@ SLEEP_DELAY=${1:-5}
 # If no argument is provided, it defaults to the value of the KEYWORD variable.
 RECORDING_NAME=${2:-"$KEYWORD"}
 
-# Set the filename for the final, complete recording.
-# The recording name is now used as a prefix.
-OUTPUT_FILENAME="${RECORDING_NAME}_$(date +'%Y%m%d_%H%M%S').jfr"
-TEMP_FILENAME="temp_${OUTPUT_FILENAME}"
-
 # --- Find the PID ---
 # Use `ps -ef` to list all running processes,
 # `grep` to filter for our keyword, and then
@@ -36,6 +31,18 @@ if [ -z "$PID" ]; then
     echo "Error: No process found with the keyword '$KEYWORD'."
     exit 1
 fi
+
+
+
+# Use an absolute path to ensure the files are created and processed correctly.
+SCRIPT_DIR=$(pwd)
+echo "Using script directory: $SCRIPT_DIR"
+TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+BASENAME="${RECORDING_NAME}_${TIMESTAMP}.jfr"
+TEMP_FILENAME="$SCRIPT_DIR/temp_$BASENAME"
+OUTPUT_FILENAME="$SCRIPT_DIR/$BASENAME"
+
+
 
 echo "Found process with PID: $PID"
 echo "Using a sleep delay of ${SLEEP_DELAY} seconds."
@@ -54,9 +61,10 @@ echo "--- Stopping JFR recording '$RECORDING_NAME' ---"
 jcmd "$PID" JFR.stop name="$RECORDING_NAME"
 
 # Scrub the temporary recording to remove sensitive information
+# --exclude-events jdk.InitialSystemProperty,jdk.SystemProperty,jdk.InitialEnvironmentVariable,jdk.EnvironmentVariable \
 echo "--- Scrubbing sensitive events from the recording ---"
 jfr scrub \
-    --exclude-events jdk.InitialSystemProperty,jdk.SystemProperty,jdk.InitialEnvironmentVariable,jdk.EnvironmentVariable \
+    --exclude-events jdk.InitialEnvironmentVariable,jdk.EnvironmentVariable \
     "$TEMP_FILENAME" \
     "$OUTPUT_FILENAME"
 
