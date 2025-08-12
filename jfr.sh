@@ -32,9 +32,9 @@ if [ -z "$PID" ]; then
     exit 1
 fi
 
-
-
-# Use an absolute path to ensure the files are created and processed correctly.
+# Use the present working directory (pwd) as the base for file creation.
+# Note: This means the output file will be generated in the directory from
+# which the script is executed, not necessarily where the script file is located.
 SCRIPT_DIR=$(pwd)
 echo "Using script directory: $SCRIPT_DIR"
 TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
@@ -54,13 +54,14 @@ echo "--- Starting JFR recording '$RECORDING_NAME' on PID $PID and saving to '$T
 jcmd "$PID" JFR.start name="$RECORDING_NAME" filename="$TEMP_FILENAME"
 
 # Give the recording a moment to start, using the optional delay
-echo "Sleeping for ${SLEEP_DELAY} seconds before stopping the recording."
+echo "Sleeping for ${SLEEP_DELAY} seconds before stopping the recording via jcmd..."
+STOP_CMD="jcmd $PID JFR.stop name=\"$RECORDING_NAME\""
+echo "$STOP_CMD"
 sleep "$SLEEP_DELAY"
-
 echo "--- Stopping JFR recording '$RECORDING_NAME' ---"
-jcmd "$PID" JFR.stop name="$RECORDING_NAME"
+eval "$STOP_CMD"
 
-# Scrub the temporary recording to remove sensitive information
+# Scrub the temporary recording to remove sensitive information6
 # --exclude-events jdk.InitialSystemProperty,jdk.SystemProperty,jdk.InitialEnvironmentVariable,jdk.EnvironmentVariable \
 echo "--- Scrubbing sensitive events from the recording ---"
 jfr scrub \
