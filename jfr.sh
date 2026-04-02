@@ -51,16 +51,24 @@ echo "Using a recording name of: $RECORDING_NAME"
 # --- JFR Commands ---
 # Start the recording using the default settings, saving to a temporary file.
 echo "--- Starting JFR recording '$RECORDING_NAME' on PID $PID and saving to '$TEMP_FILENAME' ---"
-START_CMD="jcmd $PID JFR.start name=\"$RECORDING_NAME\" filename=\"$TEMP_FILENAME\" maxage=${SLEEP_DELAY}s"
+START_CMD="jcmd $PID JFR.start name=\"$RECORDING_NAME\""
 echo "$START_CMD"
 eval "$START_CMD"
 
-# Give the recording a moment to start, using the optional delay
-echo "Sleeping for ${SLEEP_DELAY} seconds before stopping the recording via jcmd..."
+# Give the recording time to collect data
+echo "Sleeping for ${SLEEP_DELAY} seconds before dumping the recording via jcmd..."
+sleep "$SLEEP_DELAY"
+
+# Dump only the last SLEEP_DELAY seconds of data to file
+echo "--- Dumping last ${SLEEP_DELAY}s of JFR recording '$RECORDING_NAME' ---"
+DUMP_CMD="jcmd $PID JFR.dump name=\"$RECORDING_NAME\" maxage=${SLEEP_DELAY}s filename=\"$TEMP_FILENAME\""
+echo "$DUMP_CMD"
+eval "$DUMP_CMD"
+
+# Stop the recording (no filename — data already dumped above)
+echo "--- Stopping JFR recording '$RECORDING_NAME' ---"
 STOP_CMD="jcmd $PID JFR.stop name=\"$RECORDING_NAME\""
 echo "$STOP_CMD"
-sleep "$SLEEP_DELAY"
-echo "--- Stopping JFR recording '$RECORDING_NAME' ---"
 eval "$STOP_CMD"
 
 # Scrub the temporary recording to remove sensitive information6
