@@ -51,7 +51,7 @@ echo "Using a recording name of: $RECORDING_NAME"
 # --- JFR Commands ---
 # Start the recording using the default settings, saving to a temporary file.
 echo "--- Starting JFR recording '$RECORDING_NAME' on PID $PID and saving to '$TEMP_FILENAME' ---"
-START_CMD="jcmd $PID JFR.start name=\"$RECORDING_NAME\" filename=\"$TEMP_FILENAME\""
+START_CMD="jcmd $PID JFR.start name=\"$RECORDING_NAME\" filename=\"$TEMP_FILENAME\" settings=profile"
 echo "$START_CMD"
 eval "$START_CMD"
 
